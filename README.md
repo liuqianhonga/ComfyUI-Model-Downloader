@@ -14,7 +14,7 @@
 1. 克隆此仓库到ComfyUI的`custom_nodes`目录:
 
    ```bash
-   git clone https://github.com/您的用户名/comfyui_model_downloader.git
+   git clone https://github.com/liuqianhonga/ComfyUI-Model-Downloader.git
    ```
 
 2. 安装依赖:
