@@ -1,6 +1,14 @@
 # ComfyUI Model Downloader (ComfyUI 模型下载器)
 
-这是一个用于ComfyUI的模型下载器插件。
+这是一个用于ComfyUI的模型下载器插件，支持huggingface和civitai模型下载，这里更推荐使用civitai，因为civitai提供了更详细的模型信息，包括触发词等。此插件使用`cursor`构建，尚有不完善之处。
+
+做这个插件的初衷是让本地下载的模型可以与远端的模型关联上，能够快速的定位到远端的模型。
+
+使用过很多工作流，里面选定的模型很多没办法准确定位到是哪个，去哪里下载，有些还是改过名字的，给运行这个工作流造成很多困扰，所以想通过这个插件能够准确找到模型在哪？
+
+其可以作为加载模型的前置节点，使分享出去的工作流可以直接运行，而不用关心模型下载的问题。
+
+![example](example.png)
 
 ## 功能
 
@@ -8,6 +16,10 @@
 - 下载LoRA模型
 - 下载VAE模型
 - 下载UNET模型
+
+## 待办
+
+- civitai有些模型下载会失败，报401，尚未解决
 
 ## 安装
 
@@ -25,14 +37,22 @@
 
 ## 使用方法
 
-在ComfyUI中,您可以使用以下节点:
+在ComfyUI中，`添加节点 - 模型下载`，您可以使用以下节点:
 
-- DownloadCheckpoint
-- DownloadLora
-- DownloadVAE
-- DownloadUNET
+- 下载 Checkpoint
+- 下载 LoRA
+- 下载 VAE
+- 下载 UNET
 
 每个节点都需要`model_id`和`source`作为输入。如果模型在本地存在,将直接加载;否则,将从指定的源下载。
+
+如果`source`为`civitai`，`model_id`为模型id，如`https://civitai.com/models/123456`，则`model_id`为`123456`。
+
+如果`source`为`huggingface`，`model_id`为模型id，如`https://huggingface.co/models/runwayml/stable-diffusion-v1-5`，则`model_id`为`runwayml/stable-diffusion-v1-5`。
+
+`files_name`仅在huggingface下载时生效，支持多个文件，每行一个，如果为空，则下载所有文件。
+
+下载到的模型会根据`base_model`创建二级目录，如`models/lora/SDXL/`，模型以模型ID+模型名称命名，如`[120096]Pixel Art XL.safetensors`，下载模型的同时会保存一份同名的预览图，如`[120096]Pixel Art XL.png`，但仅`civitai`的模型会有预览图。
 
 ## 许可证
 

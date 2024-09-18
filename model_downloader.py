@@ -64,13 +64,17 @@ class ModelDownloader:
         else:
             return model_id
 
-    def download_from_huggingface(self, model_type, model_id, local_path, download_url, file_names=None):
+    def download_from_huggingface(self, model_type, model_id, local_dir, download_url, file_names=None):
         logging.info(f"从Hugging Face下载{model_type}模型: {model_id}")
         try:
             files = file_names if file_names else self.hf_api.list_repo_files(model_id)
+            downloaded_files = []
             for file in files:
                 file_url = hf_hub_url(model_id, filename=file)
-                file_local_path = os.path.join(local_path, file)
+                # 保留原始文件名和扩展名，只在前面添加模型ID
+                original_filename = os.path.basename(file)
+                file_name = self.sanitize_filename(f"[{model_id}]{original_filename}")
+                file_local_path = os.path.join(local_dir, file_name)
                 os.makedirs(os.path.dirname(file_local_path), exist_ok=True)
                 
                 response = self.session.get(file_url, stream=True)
@@ -91,10 +95,11 @@ class ModelDownloader:
                             self.progress_callback(progress_bar.n / total_size * 100)
                 
                 logging.info(f"下载完成: {file_local_path}")
+                downloaded_files.append(file_local_path)
         except Exception as e:
             logging.error(f"从Hugging Face下载模型时出错: {e}")
             raise
-        return local_path
+        return downloaded_files
     
     def download_from_civitai(self, model_type, model_id, local_path, download_url):
         logging.info(f"从Civitai下载{model_type}模型: {model_id}")
@@ -227,7 +232,7 @@ class ModelDownloader:
     def get_model_details(self, source, model_id, model_info):
         if source == "huggingface":
             model_name = self.get_model_name(source, model_id)
-            return f"模型名称: {model_name}\n触发词: 未知\n模型地址: https://huggingface.co/{model_id}\n本地存储路径: {model_info.get('local_path', '未知')}"
+            return f"模型名称: {model_name}\n触发词: 未知\n模型地址: https://huggingface.co/{model_id}"
         elif source == "civitai":
             model_name = model_info.get('name', 'Unknown')
             trigger_words = []
@@ -243,7 +248,7 @@ class ModelDownloader:
                 trigger_words = version_to_use.get('trainedWords', [])
             
             trigger_words_str = ', '.join(trigger_words) if trigger_words else '未知'
-            return f"模型名称: {model_name}\n触发词: {trigger_words_str}\n模型地址: https://civitai.com/models/{model_id}\n本地存储路径: {model_info.get('local_path', '未知')}"
+            return f"模型名称: {model_name}\n触发词: {trigger_words_str}\n模型地址: https://civitai.com/models/{model_id}"
         else:
             return "无法获取模型详细信息"
 
@@ -262,105 +267,67 @@ class ModelDownloader:
         model_info = self.get_model_info(source, model_id)
         model_name = self.get_model_name(source, model_id)
         download_url = self.get_download_url(source, model_id, model_info)
-        file_extension = self.get_file_extension(source, model_info, download_url)
         
-        # 使用新的命名规则：[模型id]+模型名称，包含完整的文件后缀名
-        filename = self.sanitize_filename(f"[{model_id}]{model_name}{file_extension}")
-        local_path = os.path.join(self.model_types[model_type], base_model, filename)
+        local_dir = os.path.join(self.model_types[model_type], base_model)
+        os.makedirs(local_dir, exist_ok=True)
         
-        model_exists = os.path.exists(local_path) and os.path.getsize(local_path) > 0
-        
-        if not model_exists:
-            logging.info(f"模型文件不存在或为空，开始下载: {local_path}")
-            os.makedirs(os.path.dirname(local_path), exist_ok=True)
-            if source == "huggingface":
-                self.download_from_huggingface(model_type, model_id, local_path, download_url, file_names)
-            elif source == "civitai":
-                self.download_from_civitai(model_type, model_id, local_path, download_url)
+        if source == "huggingface":
+            expected_files = file_names if file_names else self.hf_api.list_repo_files(model_id)
+            local_paths = [os.path.join(local_dir, self.sanitize_filename(f"[{model_id}]{os.path.basename(f)}")) for f in expected_files]
             
-            if not os.path.exists(local_path) or os.path.getsize(local_path) == 0:
-                raise ValueError(f"下载失败或文件大小为0: {local_path}")
-        else:
-            logging.info(f"模型文件已存在: {local_path}")
+            # 检查文件是否已存在
+            missing_files = [f for f in local_paths if not os.path.exists(f) or os.path.getsize(f) == 0]
+            
+            if missing_files:
+                local_paths = self.download_from_huggingface(model_type, model_id, local_dir, download_url, file_names)
+            else:
+                logging.info(f"模型文件已存在，跳过下载: {local_paths}")
+            
+            # 选择第一个文件作为主要模型文件
+            main_model_path = local_paths[0] if local_paths else None
+        elif source == "civitai":
+            file_extension = self.get_file_extension(source, model_info, download_url)
+            filename = self.sanitize_filename(f"[{model_id}]{model_name}{file_extension}")
+            main_model_path = os.path.join(local_dir, filename)
+            
+            if os.path.exists(main_model_path) and os.path.getsize(main_model_path) > 0:
+                logging.info(f"模型文件已存在，跳过下载: {main_model_path}")
+            else:
+                main_model_path = self.download_from_civitai(model_type, model_id, main_model_path, download_url)
+        
+        if not main_model_path or not os.path.exists(main_model_path) or os.path.getsize(main_model_path) == 0:
+            raise ValueError(f"下载失败或文件大小为0: {main_model_path}")
         
         # 下载预览图片（无论模型是否已存在）
-        preview_image_path = None
+        preview_image_path = self.download_preview_image_if_available(source, model_id, model_info, local_dir, main_model_path)
+        
+        # 剔除 "models" 和模型类型目录
+        relative_model_path = os.path.relpath(main_model_path, start=os.path.dirname(os.path.dirname(self.model_types[model_type])))
+        
+        # 只保留基础模型目录及之后的路径
+        relative_model_path = os.path.join(base_model, os.path.basename(relative_model_path))
+        
+        model_details = self.get_model_details(source, model_id, model_info)
+        return relative_model_path, model_details
+
+    def download_preview_image_if_available(self, source, model_id, model_info, local_dir, model_path):
         if source == "civitai" and 'modelVersions' in model_info and model_info['modelVersions']:
             first_version = model_info['modelVersions'][0]
             if 'images' in first_version and first_version['images']:
                 first_image = first_version['images'][0]
                 image_url = first_image.get('url')
                 if image_url:
-                    # 从URL中获取图片的原始扩展名
+                    # 使用模型文件名作为基础，仅更改扩展名
+                    model_filename = os.path.basename(model_path)
+                    model_name_without_ext = os.path.splitext(model_filename)[0]
                     image_extension = os.path.splitext(image_url.split('?')[0])[1]
-                    # 使用与模型相同的命名规则，但保留预览图的原始扩展名
-                    image_filename = self.sanitize_filename(f"[{model_id}]{model_name}{image_extension}")
-                    preview_image_path = os.path.join(self.model_types[model_type], base_model, image_filename)
+                    image_filename = f"{model_name_without_ext}{image_extension}"
+                    preview_image_path = os.path.join(local_dir, image_filename)
                     
                     if not os.path.exists(preview_image_path):
                         logging.info(f"预览图片不存在，开始下载: {preview_image_path}")
                         self.download_preview_image(image_url, preview_image_path)
                     else:
                         logging.info(f"预览图片已存在: {preview_image_path}")
-        
-        # 增加本地存储路径字段到 model_info
-        model_info['local_path'] = local_path
-        model_details = self.get_model_details(source, model_id, model_info)
-        return local_path, model_details
-
-# ComfyUI节点定义
-class BaseModelDownloader:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {"required": {
-            "source": (["huggingface", "civitai"], {"default": "civitai"}),
-            "model_id": ("STRING", {"default": "", "multiline": False}),
-            "base_model": (["SD1.5", "SDXL", "Flux.1"], {"default": "Flux.1"}),
-            "file_names": ("STRING", {"default": "", "multiline": True, "optional": True}) if cls.MODEL_TYPE == "huggingface" else None
-        }}
-    
-    RETURN_TYPES = (ANY, "STRING")
-    FUNCTION = "download_and_get_filename"
-    CATEGORY = "模型下载"
-
-    @classmethod
-    def download_and_get_filename(cls, source, model_id, base_model, file_names=None, progress_callback=None):
-        downloader = ModelDownloader(progress_callback=progress_callback)
-        file_names_list = file_names.splitlines() if file_names else None
-        full_path, model_details = downloader.ensure_downloaded(cls.MODEL_TYPE, model_id, source, base_model, file_names_list)
-        filename = os.path.basename(full_path)
-        result = os.path.join(base_model, filename)
-        
-        return (result, model_details)
-
-class DownloadCheckpoint(BaseModelDownloader):
-    MODEL_TYPE = "checkpoint"
-    RETURN_NAMES = ("ckpt_name", "model_info")
-
-class DownloadLora(BaseModelDownloader):
-    MODEL_TYPE = "lora"
-    RETURN_NAMES = ("lora_name", "model_info")
-
-class DownloadVAE(BaseModelDownloader):
-    MODEL_TYPE = "vae"
-    RETURN_NAMES = ("vae_name", "model_info")
-
-class DownloadUNET(BaseModelDownloader):
-    MODEL_TYPE = "unet"
-    RETURN_NAMES = ("unet_name", "model_info")
-
-# 注册节点
-NODE_CLASS_MAPPINGS = {
-    "DownloadCheckpoint": DownloadCheckpoint,
-    "DownloadLora": DownloadLora,
-    "DownloadVAE": DownloadVAE,
-    "DownloadUNET": DownloadUNET
-}
-
-# 定义节点显示名称
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "DownloadCheckpoint": "下载 Checkpoint",
-    "DownloadLora": "下载 LoRA",
-    "DownloadVAE": "下载 VAE",
-    "DownloadUNET": "下载 UNET"
-}
+                    return preview_image_path
+        return None
