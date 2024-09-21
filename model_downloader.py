@@ -1,3 +1,4 @@
+import configparser
 import os
 import requests
 from requests.adapters import HTTPAdapter
@@ -29,6 +30,9 @@ class CivitaiAPI:
 
 class ModelDownloader:
     def __init__(self, progress_callback=None):
+        self.config = self.load_config()
+        self.civitai_api_key = self.config.get('civitai', 'api_key', fallback=None)
+        self.huggingface_token = self.config.get('huggingface', 'token', fallback=None)
         self.civitai = CivitaiAPI()
         self.model_types = {
             "checkpoint": os.path.join("models", "checkpoints"),
@@ -77,8 +81,14 @@ class ModelDownloader:
                 file_local_path = os.path.join(local_dir, file_name)
                 os.makedirs(os.path.dirname(file_local_path), exist_ok=True)
                 
-                response = self.session.get(file_url, stream=True)
-                response.raise_for_status()
+                headers = {}
+                if self.huggingface_token:
+                    headers['Authorization'] = f'Bearer {self.huggingface_token}'
+
+                response = self.session.get(file_url, stream=True, headers=headers)
+                if response.status_code != 200:
+                    raise Exception(f"Failed to download file {file}: {response.status_code}")
+
                 total_size = int(response.headers.get('content-length', 0))
                 
                 with open(file_local_path, 'wb') as f, tqdm(
@@ -104,7 +114,12 @@ class ModelDownloader:
     def download_from_civitai(self, model_type, model_id, local_path, download_url):
         logging.info(f"从Civitai下载{model_type}模型: {model_id}")
         try:
-            response = self.session.get(download_url, stream=True, verify=False)  # 忽略 SSL 验证
+            headers = {}
+            if self.civitai_api_key:
+                headers['Authorization'] = f'Bearer {self.civitai_api_key}'
+
+            response = self.session.get(download_url, stream=True, verify=False, headers=headers)  # 忽略 SSL 验证
+
             if response.status_code == 401:
                 error_message = (
                     f"下载 Civitai 模型 {model_id} 时遇到 401 Unauthorized 错误。\n"
@@ -119,7 +134,9 @@ class ModelDownloader:
                 logging.error(error_message)
                 raise ValueError(error_message)
             
-            response.raise_for_status()
+            if response.status_code != 200:
+                raise Exception(f"Failed to download model: {response.status_code}")
+
             total_size = int(response.headers.get('content-length', 0))
             
             with open(local_path, 'wb') as file, tqdm(
@@ -331,3 +348,10 @@ class ModelDownloader:
                         logging.info(f"预览图片已存在: {preview_image_path}")
                     return preview_image_path
         return None
+
+    def load_config(self):
+        config = configparser.ConfigParser()
+        config_path = 'config.ini'
+        if os.path.exists(config_path):
+            config.read(config_path)
+        return config

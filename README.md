@@ -17,10 +17,6 @@
 - 下载VAE模型
 - 下载UNET模型
 
-## 待办
-
-- civitai有些模型下载会失败，报401，尚未解决
-
 ## 安装
 
 1. 克隆此仓库到ComfyUI的`custom_nodes`目录:
@@ -34,6 +30,26 @@
    ```bash
    pip install -r requirements.txt
    ```
+
+## 配置
+
+对于需要认证的下载（如 Civitai 的某些模型或 Hugging Face 的私有模型），请按以下步骤配置：
+
+1. 在插件目录下找到 `config.ini.example` 文件。
+2. 复制 `config.ini.example` 并重命名为 `config.ini`。
+3. 编辑 `config.ini`，填入你的 Civitai API 密钥和/或 Hugging Face 令牌：
+
+   ```ini
+   [civitai]
+   api_key = YOUR_CIVITAI_API_KEY_HERE
+
+   [huggingface]
+   token = YOUR_HUGGINGFACE_TOKEN_HERE
+   ```
+
+4. 保存文件并重启 ComfyUI。
+
+注意：请妥善保管你的 API 密钥和令牌，不要将包含这些信息的配置文件分享给他人。
 
 ## 使用方法
 
@@ -53,6 +69,7 @@
 `files_name`仅在huggingface下载时生效，支持多个文件，每行一个，如果为空，则下载所有文件。
 
 下载到的模型会根据`base_model`创建二级目录，如`models/lora/SDXL/`，模型以模型ID+模型名称命名，如`[120096]Pixel Art XL.safetensors`，下载模型的同时会保存一份同名的预览图，如`[120096]Pixel Art XL.png`，但仅`civitai`的模型会有预览图。
+
 
 ## 许可证
 

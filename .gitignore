@@ -6,35 +6,13 @@ __pycache__/
 # 虚拟环境
 venv/
 env/
-ENV/
 
-# 分发/打包
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# PyCharm
+# IDE
 .idea/
-
-# VS Code
 .vscode/
 
 # 操作系统
 .DS_Store
 Thumbs.db
 
-# 下载的模型文件
-models/
+config.ini

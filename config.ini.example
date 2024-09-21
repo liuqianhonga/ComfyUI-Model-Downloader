@@ -1,0 +1,5 @@
+[civitai]
+api_key = YOUR_CIVITAI_API_KEY_HERE
+
+[huggingface]
+token = YOUR_HUGGINGFACE_TOKEN_HERE
