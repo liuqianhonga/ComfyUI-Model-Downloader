@@ -15,7 +15,7 @@ class BaseModelDownloader:
                 "file_names": ("STRING", {
                     "default": "", 
                     "multiline": True, 
-                    "placeholder": "仅在huggingface下载时生效，支持多个文件，每行一个"
+                    "placeholder": "仅在huggingface下载时生效，支持多个文件，每行一个，空下载所有文件"
                 })
             }
         }
