@@ -351,7 +351,10 @@ class ModelDownloader:
 
     def load_config(self):
         config = configparser.ConfigParser()
-        config_path = 'config.ini'
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
         if os.path.exists(config_path):
             config.read(config_path)
+        else:
+            logging.error(f"找不到根目录下的配置文件: {config_path}")
+            raise FileNotFoundError(f"配置文件 {config_path} 不存在。")
         return config
