@@ -19,7 +19,7 @@ class BaseModelDownloader:
             "required": {
                 "source": (["civitai", "huggingface"], {"default": "civitai"}),
                 "model_id": ("STRING", {"default": "", "multiline": False}),
-                "base_model": (["SD1.5", "SDXL", "Flux.1"], {"default": "Flux.1"})
+                "base_model": (["SD1.5", "SDXL", "Flux.1", "Kolors"], {"default": "Flux.1"})
             },
             "optional": {
                 "file_names": ("STRING", {
@@ -32,7 +32,7 @@ class BaseModelDownloader:
 
     RETURN_TYPES = (ANY,)
     FUNCTION = "download_and_get_filename"
-    CATEGORY = "模型下载"
+    CATEGORY = "Model Download"
     OUTPUT_NODE = True
 
     @classmethod
@@ -71,8 +71,8 @@ NODE_CLASS_MAPPINGS = {
 
 # 定义节点显示名称
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "DownloadCheckpoint": "下载 Checkpoint",
-    "DownloadLora": "下载 LoRA",
-    "DownloadVAE": "下载 VAE",
-    "DownloadUNET": "下载 UNET"
+    "DownloadCheckpoint": "Download Checkpoint",
+    "DownloadLora": "Download LoRA",
+    "DownloadVAE": "Download VAE",
+    "DownloadUNET": "Download UNET"
 }

@@ -53,12 +53,12 @@
 
 ## 使用方法
 
-在ComfyUI中，`添加节点 - 模型下载`，您可以使用以下节点:
+在ComfyUI中，`添加节点 - Model Download`，您可以使用以下节点:
 
-- 下载 Checkpoint
-- 下载 LoRA
-- 下载 VAE
-- 下载 UNET
+- Download Checkpoint
+- Download LoRA
+- Download VAE
+- Download UNET
 
 每个节点都需要`model_id`和`source`作为输入。如果模型在本地存在,将直接加载;否则,将从指定的源下载。
 
