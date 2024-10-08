@@ -11,14 +11,6 @@ import re
 # 设置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Hack: string type that is always equal in not equal comparisons
-class AnyType(str):
-    def __ne__(self, __value: object) -> bool:
-        return False
-
-# Our any instance wants to be a wildcard string
-ANY = AnyType("*")
-
 class CivitaiAPI:
     def __init__(self):
         self.base_url = "https://civitai.com/api/v1"

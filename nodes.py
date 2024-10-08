@@ -1,5 +1,15 @@
 import os
-from .model_downloader import ModelDownloader, ANY
+import json
+from .model_downloader import ModelDownloader
+import logging
+
+# Hack: string type that is always equal in not equal comparisons
+class AnyType(str):
+    def __ne__(self, __value: object) -> bool:
+        return False
+
+# Our any instance wants to be a wildcard string
+ANY = AnyType("*")
 
 # ComfyUI节点定义
 class BaseModelDownloader:
@@ -7,7 +17,7 @@ class BaseModelDownloader:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "source": (["huggingface", "civitai"], {"default": "civitai"}),
+                "source": (["civitai", "huggingface"], {"default": "civitai"}),
                 "model_id": ("STRING", {"default": "", "multiline": False}),
                 "base_model": (["SD1.5", "SDXL", "Flux.1"], {"default": "Flux.1"})
             },
@@ -20,7 +30,7 @@ class BaseModelDownloader:
             }
         }
 
-    RETURN_TYPES = (ANY, "STRING")
+    RETURN_TYPES = (ANY,)
     FUNCTION = "download_and_get_filename"
     CATEGORY = "模型下载"
     OUTPUT_NODE = True
@@ -30,23 +40,26 @@ class BaseModelDownloader:
         downloader = ModelDownloader(progress_callback=progress_callback)
         file_names_list = file_names.splitlines() if file_names and source == "huggingface" else None
         main_model_path, model_details = downloader.ensure_downloaded(cls.MODEL_TYPE, model_id, source, base_model, file_names_list)
-        return (main_model_path, model_details)
+
+        logging.info(model_details)
+
+        return {"ui": {"model_details": (model_details,)}, "result": (main_model_path,)}
 
 class DownloadCheckpoint(BaseModelDownloader):
     MODEL_TYPE = "checkpoint"
-    RETURN_NAMES = ("ckpt_name", "model_info")
+    RETURN_NAMES = ("ckpt_name",)
 
 class DownloadLora(BaseModelDownloader):
     MODEL_TYPE = "lora"
-    RETURN_NAMES = ("lora_name", "model_info")
+    RETURN_NAMES = ("lora_name",)
 
 class DownloadVAE(BaseModelDownloader):
     MODEL_TYPE = "vae"
-    RETURN_NAMES = ("vae_name", "model_info")
+    RETURN_NAMES = ("vae_name",)
 
 class DownloadUNET(BaseModelDownloader):
     MODEL_TYPE = "unet"
-    RETURN_NAMES = ("unet_name", "model_info")
+    RETURN_NAMES = ("unet_name",)
 
 # 注册节点
 NODE_CLASS_MAPPINGS = {

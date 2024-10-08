@@ -1,10 +1,10 @@
 # ComfyUI Model Downloader (ComfyUI 模型下载器)
 
-这是一个用于ComfyUI的模型下载器插件，支持huggingface和civitai模型下载，这里更推荐使用civitai，因为civitai提供了更详细的模型信息，包括触发词等。此插件使用`cursor`构建，尚有不完善之处。
+这是一个用于ComfyUI的模型下载器插件，支持civitai和huggingface下的模型下载，这里更推荐使用civitai，因为civitai提供了更详细的模型信息，包括触发词等。
 
 做这个插件的初衷是让本地下载的模型可以与远端的模型关联上，能够快速的定位到远端的模型。
 
-使用过很多工作流，里面选定的模型很多没办法准确定位到是哪个，去哪里下载，有些还是改过名字的，给运行这个工作流造成很多困扰，所以想通过这个插件能够准确找到模型在哪？
+> 使用过很多工作流，里面选定的模型很多没办法准确定位到是哪个，去哪里下载，有些还是改过名字和存放路径的，给运行这个工作流造成很多困扰，所以想通过这个插件能够准确找到模型在哪，真正可以做到开箱即用。
 
 其可以作为加载模型的前置节点，使分享出去的工作流可以直接运行，而不用关心模型下载的问题。
 
@@ -64,7 +64,7 @@
 
 如果`source`为`civitai`，`model_id`为模型id，如`https://civitai.com/models/123456`，则`model_id`为`123456`。
 
-如果`source`为`huggingface`，`model_id`为模型id，如`https://huggingface.co/models/runwayml/stable-diffusion-v1-5`，则`model_id`为`runwayml/stable-diffusion-v1-5`。
+如果`source`为`huggingface`，`model_id`为模型空间名称，如`https://huggingface.co/models/runwayml/stable-diffusion-v1-5`，则`model_id`为`runwayml/stable-diffusion-v1-5`。
 
 `files_name`仅在huggingface下载时生效，支持多个文件，每行一个，如果为空，则下载所有文件。
 
