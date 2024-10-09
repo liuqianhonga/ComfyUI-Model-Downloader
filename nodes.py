@@ -61,12 +61,17 @@ class DownloadUNET(BaseModelDownloader):
     MODEL_TYPE = "unet"
     RETURN_NAMES = ("unet_name",)
 
+class DownloadControlNet(BaseModelDownloader):
+    MODEL_TYPE = "controlnet"
+    RETURN_NAMES = ("controlnet_name",)
+
 # 注册节点
 NODE_CLASS_MAPPINGS = {
     "DownloadCheckpoint": DownloadCheckpoint,
     "DownloadLora": DownloadLora,
     "DownloadVAE": DownloadVAE,
-    "DownloadUNET": DownloadUNET
+    "DownloadUNET": DownloadUNET,
+    "DownloadControlNet": DownloadControlNet 
 }
 
 # 定义节点显示名称
@@ -74,5 +79,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DownloadCheckpoint": "Download Checkpoint",
     "DownloadLora": "Download LoRA",
     "DownloadVAE": "Download VAE",
-    "DownloadUNET": "Download UNET"
+    "DownloadUNET": "Download UNET",
+    "DownloadControlNet": "Download ControlNet"
 }

@@ -16,7 +16,7 @@
 - 下载LoRA模型
 - 下载VAE模型
 - 下载UNET模型
-
+- 下载ControlNet模型
 ## 安装
 
 1. 克隆此仓库到ComfyUI的`custom_nodes`目录:
@@ -59,6 +59,7 @@
 - Download LoRA
 - Download VAE
 - Download UNET
+- Download ControlNet
 
 每个节点都需要`model_id`和`source`作为输入。如果模型在本地存在,将直接加载;否则,将从指定的源下载。
 

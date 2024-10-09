@@ -30,7 +30,8 @@ class ModelDownloader:
             "checkpoint": os.path.join("models", "checkpoints"),
             "lora": os.path.join("models", "loras"),
             "vae": os.path.join("models", "vae"),
-            "unet": os.path.join("models", "unet")
+            "unet": os.path.join("models", "unet"),
+            "controlnet": os.path.join("models", "controlnet")
         }
         self.base_model_types = ["SD1.5", "SDXL", "Flux.1"]
         self.name = "ComfyUI Model Manager"
@@ -191,7 +192,8 @@ class ModelDownloader:
                     latest_version = model_info['modelVersions'][0]
                     files = latest_version.get('files', [])
                     if files:
-                        download_url = files[0].get('downloadUrl')
+                        model_file = next((f for f in files if f.get('type') == 'Model'), None)
+                        download_url = model_file.get('downloadUrl') if model_file else None
                         if download_url:
                             logging.info(f"成功获取Civitai模型 {model_id} 的下载链接")
                             return download_url
@@ -203,7 +205,7 @@ class ModelDownloader:
                 raise ValueError(f"处理Civitai模型 {model_id} 信息时出错: {e}")
         
         logging.error(f"无法获取模型 {model_id} 的下载链接")
-        raise ValueError(f"无法获取模型 {model_id} 的下载链接")
+        raise ValueError(f"无法获取模型 {model_id} 的下     载链接")
 
     def get_model_info(self, source, model_id):
         if source == "huggingface":
@@ -232,7 +234,8 @@ class ModelDownloader:
             if 'modelVersions' in model_info and model_info['modelVersions']:
                 files = model_info['modelVersions'][0].get('files', [])
                 if files:
-                    return os.path.splitext(files[0].get('name', ''))[-1]
+                    model_file = next((f for f in files if f.get('type') == 'Model'), None)
+                    return os.path.splitext(model_file.get('name', ''))[-1] if model_file else '.safetensors'
         return '.safetensors'
 
     def sanitize_filename(self, filename):
