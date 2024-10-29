@@ -171,7 +171,7 @@ class ModelDownloader:
             raise
         return local_path
 
-    def get_download_url(self, source, model_id, model_info):
+    def get_download_url(self, source, model_id, model_info, version_id=None):
         if source == "huggingface":
             try:
                 files = self.hf_api.list_repo_files(model_id)
@@ -188,15 +188,13 @@ class ModelDownloader:
                 if isinstance(model_info, str):
                     model_info = self.civitai.get_model(model_id)
                 
-                if 'modelVersions' in model_info and model_info['modelVersions']:
-                    latest_version = model_info['modelVersions'][0]
-                    files = latest_version.get('files', [])
-                    if files:
-                        model_file = next((f for f in files if f.get('type') == 'Model'), None)
-                        download_url = model_file.get('downloadUrl') if model_file else None
-                        if download_url:
-                            logging.info(f"成功获取Civitai模型 {model_id} 的下载链接")
-                            return download_url
+                version = self.get_model_version(model_info, version_id)
+                if version and version.get('files'):
+                    model_file = next((f for f in version['files'] if f.get('type') == 'Model'), None)
+                    download_url = model_file.get('downloadUrl') if model_file else None
+                    if download_url:
+                        logging.info(f"成功获取Civitai模型 {model_id} 版本 {version.get('id')} 的下载链接")
+                        return download_url, version
                 
                 logging.error(f"无法从Civitai模型信息中获取下载链接: {model_info}")
                 raise ValueError(f"无法从Civitai模型信息中获取下载链接")
@@ -241,33 +239,43 @@ class ModelDownloader:
     def sanitize_filename(self, filename):
         return re.sub(r'[\\/*?:"<>|]', "_", filename)
 
-    def get_model_details(self, source, model_id, model_info):
+    def get_model_details(self, source, model_id, model_info, version=None):
         if source == "huggingface":
             model_name = self.get_model_name(source, model_id)
             return {
                 "name": model_name,
                 "trigger_words": None,
-                "url": f"https://huggingface.co/{model_id}"
+                "url": f"https://huggingface.co/{model_id}",
+                "version": None
             }
         elif source == "civitai":
             model_name = model_info.get('name', 'Unknown')
             trigger_words = []
             
-            if 'modelVersions' in model_info and model_info['modelVersions']:
-                current_version = next((v for v in model_info['modelVersions'] if v.get('id') == model_info.get('currentVersionId')), None)
-                version_to_use = current_version or model_info['modelVersions'][0]
-                trigger_words = version_to_use.get('trainedWords', [])
+            if version:
+                trigger_words = version.get('trainedWords', [])
+                version_name = version.get('name', str(version.get('id', '')))
+            else:
+                # 如果没有指定版本，使用最新版本
+                latest_version = model_info['modelVersions'][0] if model_info.get('modelVersions') else None
+                if latest_version:
+                    trigger_words = latest_version.get('trainedWords', [])
+                    version_name = latest_version.get('name', str(latest_version.get('id', '')))
+                else:
+                    version_name = None
             
             return {
                 "name": model_name,
                 "trigger_words": trigger_words,
-                "url": f"https://civitai.com/models/{model_id}"
+                "url": f"https://civitai.com/models/{model_id}",
+                "version": version_name
             }
         else:
             return {
                 "name": "未知",
                 "trigger_words": None,
-                "url": None
+                "url": None,
+                "version": None
             }
 
     def download_preview_image(self, image_url, local_path):
@@ -281,10 +289,38 @@ class ModelDownloader:
         except Exception as e:
             logging.error(f"下载预览图片时出错: {e}")
 
-    def ensure_downloaded(self, model_type, model_id, source, base_model, file_names=None):
+    def get_model_version(self, model_info, version_id=None):
+        if not model_info.get('modelVersions'):
+            return None
+        
+        if version_id:
+            # 查找指定版本
+            version = next(
+                (v for v in model_info['modelVersions'] if str(v.get('id')) == str(version_id)), 
+                None
+            )
+            if not version:
+                logging.warning(f"未找到指定版本 {version_id}，将使用最新版本")
+        
+        # 如果没有指定版本或找不到指定版本，使用最新版本
+        return version or model_info['modelVersions'][0]
+
+    def ensure_downloaded(self, model_type, model_id, source, base_model, version_id=None, file_names=None):
         model_info = self.get_model_info(source, model_id)
         model_name = self.get_model_name(source, model_id)
-        download_url = self.get_download_url(source, model_id, model_info)
+        version = None
+        
+        if source == "civitai":
+            download_url, version = self.get_download_url(source, model_id, model_info, version_id)
+            version_name = version.get('name', '')
+            version_id = version.get('id', '')
+            # 使用版本名称和ID组合作为版本标识
+            version_str = f"_v{version_id}"
+            if version_name:
+                version_str += f"_{self.sanitize_filename(version_name)}"
+        else:
+            download_url = self.get_download_url(source, model_id, model_info)
+            version_str = ""
         
         local_dir = os.path.join(self.model_types[model_type], base_model)
         os.makedirs(local_dir, exist_ok=True)
@@ -305,7 +341,7 @@ class ModelDownloader:
             main_model_path = local_paths[0] if local_paths else None
         elif source == "civitai":
             file_extension = self.get_file_extension(source, model_info, download_url)
-            filename = self.sanitize_filename(f"[{model_id}]{model_name}{file_extension}")
+            filename = self.sanitize_filename(f"[{model_id}]{model_name}{version_str}{file_extension}")
             main_model_path = os.path.join(local_dir, filename)
             
             if os.path.exists(main_model_path) and os.path.getsize(main_model_path) > 0:
@@ -317,7 +353,7 @@ class ModelDownloader:
             raise ValueError(f"下载失败或文件大小为0: {main_model_path}")
         
         # 下载预览图片（无论模型是否已存在）
-        preview_image_path = self.download_preview_image_if_available(source, model_id, model_info, local_dir, main_model_path)
+        preview_image_path = self.download_preview_image_if_available(source, model_id, model_info, local_dir, main_model_path, version_id)
         
         # 剔除 "models" 和模型类型目录
         relative_model_path = os.path.relpath(main_model_path, start=os.path.dirname(os.path.dirname(self.model_types[model_type])))
@@ -325,17 +361,17 @@ class ModelDownloader:
         # 只保留基础模型目录及之后的路径
         relative_model_path = os.path.join(base_model, os.path.basename(relative_model_path))
         
-        model_details = self.get_model_details(source, model_id, model_info)
+        # 更新model_details以包含版本信息
+        model_details = self.get_model_details(source, model_id, model_info, version)
         return relative_model_path, model_details
 
-    def download_preview_image_if_available(self, source, model_id, model_info, local_dir, model_path):
-        if source == "civitai" and 'modelVersions' in model_info and model_info['modelVersions']:
-            first_version = model_info['modelVersions'][0]
-            if 'images' in first_version and first_version['images']:
-                first_image = first_version['images'][0]
+    def download_preview_image_if_available(self, source, model_id, model_info, local_dir, model_path, version_id=None):
+        if source == "civitai":
+            version = self.get_model_version(model_info, version_id)
+            if version and version.get('images'):
+                first_image = version['images'][0]
                 image_url = first_image.get('url')
                 if image_url:
-                    # 使用模型文件名作为基础，仅更改扩展名
                     model_filename = os.path.basename(model_path)
                     model_name_without_ext = os.path.splitext(model_filename)[0]
                     image_extension = os.path.splitext(image_url.split('?')[0])[1]

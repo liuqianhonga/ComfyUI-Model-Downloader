@@ -71,6 +71,18 @@
 
 下载到的模型会根据`base_model`创建二级目录，如`models/lora/SDXL/`，模型以模型ID+模型名称命名，如`[120096]Pixel Art XL.safetensors`，下载模型的同时会保存一份同名的预览图，如`[120096]Pixel Art XL.png`，但仅`civitai`的模型会有预览图。
 
+## 更新日志
+
+### 新增功能
+
+- **版本选择功能**：现在支持从 Civitai 下载指定版本的模型。用户可以通过 `version_id` 字段指定要下载的版本。如果未指定版本或指定的版本不存在，则默认下载最新版本。
+- **文件命名改进**：下载的模型文件和预览图文件名中现在包含版本信息，格式为 `[model_id]model_name_v[version_id]_[version_name].extension`，以便更好地管理和区分不同版本的模型。
+
+### 使用说明
+
+#### 下载指定版本的模型
+
+在使用 `BaseModelDownloader` 类时，可以通过 `version_id` 参数指定要下载的模型版本：
 
 ## 许可证
 
