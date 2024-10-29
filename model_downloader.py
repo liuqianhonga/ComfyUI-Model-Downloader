@@ -244,25 +244,31 @@ class ModelDownloader:
     def get_model_details(self, source, model_id, model_info):
         if source == "huggingface":
             model_name = self.get_model_name(source, model_id)
-            return f"模型名称: {model_name}\n触发词: 未知\n模型地址: https://huggingface.co/{model_id}"
+            return {
+                "name": model_name,
+                "trigger_words": None,
+                "url": f"https://huggingface.co/{model_id}"
+            }
         elif source == "civitai":
             model_name = model_info.get('name', 'Unknown')
             trigger_words = []
             
             if 'modelVersions' in model_info and model_info['modelVersions']:
-                # 尝试找到当前版本
                 current_version = next((v for v in model_info['modelVersions'] if v.get('id') == model_info.get('currentVersionId')), None)
-                
-                # 如果找不到当前版本，就使用第一个版本
                 version_to_use = current_version or model_info['modelVersions'][0]
-                
-                # 获取触发词
                 trigger_words = version_to_use.get('trainedWords', [])
             
-            trigger_words_str = ', '.join(trigger_words) if trigger_words else '未知'
-            return f"模型名称: {model_name}\n触发词: {trigger_words_str}\n模型地址: https://civitai.com/models/{model_id}"
+            return {
+                "name": model_name,
+                "trigger_words": trigger_words,
+                "url": f"https://civitai.com/models/{model_id}"
+            }
         else:
-            return "无法获取模型详细信息"
+            return {
+                "name": "未知",
+                "trigger_words": None,
+                "url": None
+            }
 
     def download_preview_image(self, image_url, local_path):
         try:

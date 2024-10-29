@@ -41,9 +41,21 @@ class BaseModelDownloader:
         file_names_list = file_names.splitlines() if file_names and source == "huggingface" else None
         main_model_path, model_details = downloader.ensure_downloaded(cls.MODEL_TYPE, model_id, source, base_model, file_names_list)
 
+        # 格式化模型详情为中文字符串
+        formatted_details = f"模型名称: {model_details['name']}\n"
+        
+        if model_details['trigger_words']:
+            trigger_words_str = ', '.join(model_details['trigger_words']) if model_details['trigger_words'] else '无'
+            formatted_details += f"触发词: {trigger_words_str}\n"
+        else:
+            formatted_details += "触发词: 无\n"
+            
+        if model_details['url']:
+            formatted_details += f"模型地址: {model_details['url']}"
+        
         logging.info(model_details)
 
-        return {"ui": {"model_details": (model_details,)}, "result": (main_model_path,)}
+        return {"ui": {"model_details": (formatted_details,)}, "result": (main_model_path,)}
 
 class DownloadCheckpoint(BaseModelDownloader):
     MODEL_TYPE = "checkpoint"
