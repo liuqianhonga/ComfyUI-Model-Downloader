@@ -293,6 +293,8 @@ class ModelDownloader:
         if not model_info.get('modelVersions'):
             return None
         
+        version = None  # 初始化version变量
+        
         if version_id:
             # 查找指定版本
             version = next(
