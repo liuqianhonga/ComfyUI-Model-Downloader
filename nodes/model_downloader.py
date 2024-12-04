@@ -1,6 +1,6 @@
 import os
 import json
-from .model_downloader import ModelDownloader
+from ..lib.model_downloader import ModelDownloader
 import logging
 
 # Hack: string type that is always equal in not equal comparisons
@@ -37,7 +37,7 @@ class BaseModelDownloader:
 
     RETURN_TYPES = (ANY,)
     FUNCTION = "download_and_get_filename"
-    CATEGORY = "Model Download"
+    CATEGORY = "Model (Down)load"
     OUTPUT_NODE = True
 
     @classmethod
@@ -84,21 +84,3 @@ class DownloadUNET(BaseModelDownloader):
 class DownloadControlNet(BaseModelDownloader):
     MODEL_TYPE = "controlnet"
     RETURN_NAMES = ("controlnet_name",)
-
-# 注册节点
-NODE_CLASS_MAPPINGS = {
-    "DownloadCheckpoint": DownloadCheckpoint,
-    "DownloadLora": DownloadLora,
-    "DownloadVAE": DownloadVAE,
-    "DownloadUNET": DownloadUNET,
-    "DownloadControlNet": DownloadControlNet 
-}
-
-# 定义节点显示名称
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "DownloadCheckpoint": "Download Checkpoint",
-    "DownloadLora": "Download LoRA",
-    "DownloadVAE": "Download VAE",
-    "DownloadUNET": "Download UNET",
-    "DownloadControlNet": "Download ControlNet"
-}
