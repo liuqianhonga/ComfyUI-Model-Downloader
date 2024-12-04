@@ -10,6 +10,17 @@
 
 ![example](example.png)
 
+## 更新日志
+
+### 新增功能
+
+#### 2024-12-04
+- **按路径加载 LoRA**：新增 Load LoRA By Path 节点，支持从指定目录加载所有 LoRA 模型文件列表
+
+#### 2024-10-29
+- **版本选择功能**：现在支持从 Civitai 下载指定版本的模型。用户可以通过 `version_id` 字段指定要下载的版本。如果未指定版本或指定的版本不存在，则默认下载最新版本。
+- **文件命名改进**：下载的模型文件和预览图文件名中现在包含版本信息，格式为 `[model_id]model_name_v[version_id]_[version_name].extension`，以便更好地管理和区分不同版本的模型。
+
 ## 功能
 
 - 下载Checkpoint模型
@@ -17,19 +28,21 @@
 - 下载VAE模型
 - 下载UNET模型
 - 下载ControlNet模型
+- 按路径加载LoRA模型
+
 ## 安装
 
 1. 克隆此仓库到ComfyUI的`custom_nodes`目录:
 
-   ```bash
-   git clone https://github.com/liuqianhonga/ComfyUI-Model-Downloader.git
-   ```
+```bash
+git clone https://github.com/liuqianhonga/ComfyUI-Model-Downloader.git
+```
 
 2. 安装依赖:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install -r requirements.txt
+```
 
 ## 配置
 
@@ -39,13 +52,13 @@
 2. 复制 `config.ini.example` 并重命名为 `config.ini`。
 3. 编辑 `config.ini`，填入你的 Civitai API 密钥和/或 Hugging Face 令牌：
 
-   ```ini
-   [civitai]
-   api_key = YOUR_CIVITAI_API_KEY_HERE
+```ini
+[civitai]
+api_key = YOUR_CIVITAI_API_KEY_HERE
 
-   [huggingface]
-   token = YOUR_HUGGINGFACE_TOKEN_HERE
-   ```
+[huggingface]
+token = YOUR_HUGGINGFACE_TOKEN_HERE
+```
 
 4. 保存文件并重启 ComfyUI。
 
@@ -60,8 +73,9 @@
 - Download VAE
 - Download UNET
 - Download ControlNet
+- Load LoRA By Path
 
-每个节点都需要`model_id`和`source`作为输入。如果模型在本地存在,将直接加载;否则,将从指定的源下载。
+每个下载节点都需要`model_id`和`source`作为输入。如果模型在本地存在,将直接加载;否则,将从指定的源下载。
 
 如果`source`为`civitai`，`model_id`为模型id，如`https://civitai.com/models/123456`，则`model_id`为`123456`。
 
@@ -71,18 +85,19 @@
 
 下载到的模型会根据`base_model`创建二级目录，如`models/lora/SDXL/`，模型以模型ID+模型名称命名，如`[120096]Pixel Art XL.safetensors`，下载模型的同时会保存一份同名的预览图，如`[120096]Pixel Art XL.png`，但仅`civitai`的模型会有预览图。
 
-## 更新日志
+### Load LoRA By Path 节点使用说明
 
-### 新增功能
+该节点用于从指定目录加载 LoRA 模型文件列表。
 
-- **版本选择功能**：现在支持从 Civitai 下载指定版本的模型。用户可以通过 `version_id` 字段指定要下载的版本。如果未指定版本或指定的版本不存在，则默认下载最新版本。
-- **文件命名改进**：下载的模型文件和预览图文件名中现在包含版本信息，格式为 `[model_id]model_name_v[version_id]_[version_name].extension`，以便更好地管理和区分不同版本的模型。
+**输入参数:**
+- lora_path: 相对于 ComfyUI models/loras 目录的路径，例如输入 "SDXL" 将加载 models/loras/SDXL 目录下的所有 LoRA 文件
 
-### 使用说明
+**输出:**
+- loras: 返回指定目录下所有 .safetensors 格式的 LoRA 文件路径列表
 
-#### 下载指定版本的模型
-
-在使用 `BaseModelDownloader` 类时，可以通过 `version_id` 参数指定要下载的模型版本：
+**使用场景:**
+- 当需要批量处理某个目录下的所有 LoRA 模型时
+- 需要动态获取某个目录下的 LoRA 列表时
 
 ## 许可证
 
