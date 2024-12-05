@@ -62,7 +62,7 @@ token = YOUR_HUGGINGFACE_TOKEN_HERE
 
 4. 保存文件并重启 ComfyUI。
 
-注意：请妥善保管你的 API 密钥和令牌，不要将包含这些信息的配置文件分享给他人。
+> 注意：请妥善保管你的 API 密钥和令牌，不要将包含这些信息的配置文件分享给他人。
 
 ## 使用方法
 
@@ -90,7 +90,12 @@ token = YOUR_HUGGINGFACE_TOKEN_HERE
 该节点用于从指定目录加载 LoRA 模型文件列表。
 
 **输入参数:**
-- lora_path: 相对于 ComfyUI models/loras 目录的路径，例如输入 "SDXL" 将加载 models/loras/SDXL 目录下的所有 LoRA 文件
+- lora_paths: 相对于 ComfyUI models/loras 目录的路径，支持多个路径，以英文`,`号分隔。例如：
+  - 单个路径：`"SDXL"` 将加载 models/loras/SDXL 目录下的所有 LoRA 文件
+  - 多个路径：`"SDXL,SD15"` 将同时加载 SDXL 和 SD15 目录下的所有 LoRA 文件
+- filter_text (可选): 以英文逗号分隔的筛选文本列表，将只返回文件名包含这些文本的 lora 文件。例如：
+  - 单个筛选：`"style_art"`
+  - 多个筛选：`"style_art,pixel_art,anime"`
 
 **输出:**
 - loras: 返回指定目录下所有 .safetensors 格式的 LoRA 文件路径列表
@@ -98,6 +103,7 @@ token = YOUR_HUGGINGFACE_TOKEN_HERE
 **使用场景:**
 - 当需要批量处理某个目录下的所有 LoRA 模型时
 - 需要动态获取某个目录下的 LoRA 列表时
+- 需要筛选特定名称的 LoRA 文件时
 
 ## 许可证
 
