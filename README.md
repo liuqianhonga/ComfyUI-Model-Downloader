@@ -14,9 +14,6 @@
 
 ### 新增功能
 
-#### 2024-12-04
-- **按路径加载 LoRA**：新增 Load LoRA By Path 节点，支持从指定目录加载所有 LoRA 模型文件列表
-
 #### 2024-10-29
 - **版本选择功能**：现在支持从 Civitai 下载指定版本的模型。用户可以通过 `version_id` 字段指定要下载的版本。如果未指定版本或指定的版本不存在，则默认下载最新版本。
 - **文件命名改进**：下载的模型文件和预览图文件名中现在包含版本信息，格式为 `[model_id]model_name_v[version_id]_[version_name].extension`，以便更好地管理和区分不同版本的模型。
@@ -28,7 +25,6 @@
 - 下载VAE模型
 - 下载UNET模型
 - 下载ControlNet模型
-- 按路径加载LoRA模型
 
 ## 安装
 
@@ -73,7 +69,6 @@ token = YOUR_HUGGINGFACE_TOKEN_HERE
 - Download VAE
 - Download UNET
 - Download ControlNet
-- Load LoRA By Path
 
 每个下载节点都需要`model_id`和`source`作为输入。如果模型在本地存在,将直接加载;否则,将从指定的源下载。
 
@@ -84,26 +79,6 @@ token = YOUR_HUGGINGFACE_TOKEN_HERE
 `files_name`仅在huggingface下载时生效，支持多个文件，每行一个，如果为空，则下载所有文件。
 
 下载到的模型会根据`base_model`创建二级目录，如`models/lora/SDXL/`，模型以模型ID+模型名称命名，如`[120096]Pixel Art XL.safetensors`，下载模型的同时会保存一份同名的预览图，如`[120096]Pixel Art XL.png`，但仅`civitai`的模型会有预览图。
-
-### Load LoRA By Path 节点使用说明
-
-该节点用于从指定目录加载 LoRA 模型文件列表。
-
-**输入参数:**
-- lora_paths: 相对于 ComfyUI models/loras 目录的路径，支持多个路径，以英文`,`号分隔。例如：
-  - 单个路径：`"SDXL"` 将加载 models/loras/SDXL 目录下的所有 LoRA 文件
-  - 多个路径：`"SDXL,SD15"` 将同时加载 SDXL 和 SD15 目录下的所有 LoRA 文件
-- filter_text (可选): 以英文逗号分隔的筛选文本列表，将只返回文件名包含这些文本的 lora 文件。例如：
-  - 单个筛选：`"style_art"`
-  - 多个筛选：`"style_art,pixel_art,anime"`
-
-**输出:**
-- loras: 返回指定目录下所有 .safetensors 格式的 LoRA 文件路径列表
-
-**使用场景:**
-- 当需要批量处理某个目录下的所有 LoRA 模型时
-- 需要动态获取某个目录下的 LoRA 列表时
-- 需要筛选特定名称的 LoRA 文件时
 
 ## 许可证
 
