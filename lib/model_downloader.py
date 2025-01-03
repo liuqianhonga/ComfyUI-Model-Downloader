@@ -7,6 +7,8 @@ from tqdm import tqdm
 from huggingface_hub import hf_hub_download, HfApi, hf_hub_url
 import logging
 import re
+import json
+from folder_paths import get_folder_paths
 
 # 设置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -27,11 +29,11 @@ class ModelDownloader:
         self.huggingface_token = self.config.get('huggingface', 'token', fallback=None)
         self.civitai = CivitaiAPI()
         self.model_types = {
-            "checkpoint": os.path.join("models", "checkpoints"),
-            "lora": os.path.join("models", "loras"),
-            "vae": os.path.join("models", "vae"),
-            "unet": os.path.join("models", "unet"),
-            "controlnet": os.path.join("models", "controlnet")
+            "checkpoint": get_folder_paths("checkpoints")[0],
+            "lora": get_folder_paths("loras")[0],
+            "vae": get_folder_paths("vae")[0],
+            "unet": get_folder_paths("diffusion_models")[0],
+            "controlnet": get_folder_paths("controlnet")[0]
         }
         self.base_model_types = ["SD1.5", "SDXL", "Flux.1"]
         self.name = "ComfyUI Model Manager"
@@ -203,7 +205,7 @@ class ModelDownloader:
                 raise ValueError(f"处理Civitai模型 {model_id} 信息时出错: {e}")
         
         logging.error(f"无法获取模型 {model_id} 的下载链接")
-        raise ValueError(f"无法获取模型 {model_id} 的下     载链接")
+        raise ValueError(f"无法获取模型 {model_id} 的下载链接")
 
     def get_model_info(self, source, model_id):
         if source == "huggingface":
@@ -390,7 +392,9 @@ class ModelDownloader:
 
     def load_config(self):
         config = configparser.ConfigParser()
-        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+        # 获取项目根目录路径（当前文件所在目录的上一级目录）
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        config_path = os.path.join(root_dir, 'config.ini')
         if os.path.exists(config_path):
             config.read(config_path)
         else:
